@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flarify Create Account</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Main split layout */
+        .left,
+        .right {
+            flex: 1;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .left {
+            background: white;
+        }
+
+        .right {
+            background: #7f4cff;
+            text-align: center;
+            color: white;
+        }
+
+        /* Form header */
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 14px;
+            display: block;
+            margin: 20px 0 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .two-inputs {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #7f4cff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .small-text {
+            font-size: 13px;
+            color: #555;
+            margin: 15px 0;
+        }
+
+        .small-text a {
+            color: #0077cc;
+            text-decoration: none;
+        }
+
+        /* Dropdown */
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .role-box {
+            margin-top: 20px;
+        }
+
+        /* Testimonial */
+        .testimonial-img {
+            width: 140px;
+            height: 140px;
+            border-radius: 16px;
+            margin: 0 auto 20px;
+            object-fit: cover;
+        }
+
+        .testimonial-text {
+            max-width: 420px;
+            margin: 0 auto;
+            font-size: 15px;
+            color: #f0f0f0;
+            line-height: 1.6;
+        }
+
+        .testimonial-author {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .testimonial-role {
+            color: #ddd;
+            font-size: 14px;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .right {
+                padding: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LEFT SIDE (FORM) -->
+    <div class="left">
+        <h1>Create Your Flarify Account</h1>
+
+        <label>Email</label>
+        <input type="email" placeholder="name@work.com">
+
+        <div class="two-inputs">
+            <div>
+                <label>First Name</label>
+                <input type="text" placeholder="First Name">
+            </div>
+
+            <div>
+                <label>Last Name</label>
+                <input type="text" placeholder="Last Name">
+            </div>
+        </div>
+
+        <div class="role-box">
+            <label>Select Your Role</label>
+            <select>
+                <option value="" disabled selected>Select your role</option>
+                <option value="developer">Developer</option>
+                <option value="investor">Investor</option>
+                <option value="tester">Tester</option>
+            </select>
+        </div>
+
+        <label>Password</label>
+        <input type="password" placeholder="8 Characters Minimum">
+
+        <p class="small-text">
+            By signing up, you agree to our
+            <a href="#">Terms of Use</a> and
+            <a href="#">Privacy Policy</a>.
+        </p>
+
+        <button class="btn">Continue with Email</button>
+
+        <p class="small-text">
+            Already have an account? <a href="#">Sign In</a>
+        </p>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+        <h2>What Our Customers Say</h2>
+
+        <p class="testimonial-text">
+            “Easy to use. Requires very minimal dev work to add new experiences.
+            <strong>Empowers me as a product manager to do more without needing developers.</strong>
+            We use it for onboarding guides, NPS surveys, activation flows, and more.”
+        </p>
+
+        <p class="testimonial-author">Vincent Jorge Balista</p>
+        <p class="testimonial-role">Game Developer at GameWorks</p>
+    </div>
+
+</body>
+</html>
