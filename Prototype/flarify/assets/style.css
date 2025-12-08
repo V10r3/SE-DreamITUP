@@ -1,0 +1,131 @@
+/* ====== Global Variables (from Canva palette) ====== */
+:root {
+  --primary: #ae66ff;   /* Brand purple */
+  --text: #fdfdfd;      /* White text */
+  --bg: #141719;        /* Dark background */
+  --muted: #8f8f8f;     /* Gray muted text */
+
+  --panel: #1c1f22;     /* Slightly lighter panel background */
+  --border: #2a2d30;    /* Border lines */
+  --danger: #ff6b6b;    /* Alerts/errors */
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+/* ====== Base ====== */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ====== Navigation ====== */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 18px;
+}
+.brand {
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+.brand span { color: var(--primary); }
+.navlinks a {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 16px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.navlinks a:hover { background: #1d2330; }
+.user-pill { margin-left: 12px; color: var(--muted); }
+
+/* ====== Panels ====== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* ====== Forms ====== */
+form { display: grid; gap: 12px; }
+input, textarea {
+  background: #11151f;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+textarea { min-height: 120px; resize: vertical; }
+label.inline { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ====== Buttons ====== */
+button, .btn {
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn.secondary { background: #273049; }
+.btn.danger { background: var(--danger); }
+
+/* ====== Cards ====== */
+.card {
+  background: #1c1f22;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.card .thumb {
+  height: 140px;
+  background: var(--primary); /* purple header strip */
+}
+.card .body { padding: 14px; }
+.card .title {
+  font-weight: 700;
+  font-family: var(--font-heading);
+  margin-bottom: 6px;
+}
+.card .meta { color: var(--muted); font-size: 13px; }
+
+/* ====== Messaging ====== */
+.chat { display: grid; gap: 10px; }
+.bubble {
+  max-width: 70%;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+.bubble.me { background: var(--primary); color: var(--text); margin-left: auto; }
+.bubble.them { background: var(--panel); color: var(--text); margin-right: auto; }
+
+/* ====== Notices ====== */
+.notice {
+  background: #1c1f22;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* ====== Footer ====== */
+footer {
+  margin-top: 24px;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+}
