@@ -1,0 +1,18 @@
+# Flarify - Project-specific PHP configuration
+# Increase upload limits for game files
+
+php_value upload_max_filesize 10000M
+php_value post_max_size 100M
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 256M
+
+# Optional: Enable error logging (helpful for debugging)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Security: Prevent directory browsing
+Options -Indexes
+
+# Custom error pages (optional)
+# ErrorDocument 404 /index.php?page=404
