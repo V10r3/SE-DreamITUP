@@ -6,7 +6,7 @@ require "../config.php";
 ob_clean();
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'investor') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'investor') {
     echo json_encode(['success' => false, 'message' => 'Not authorized']);
     exit;
 }
@@ -55,7 +55,7 @@ try {
                 $project['developer_id'],
                 'investment',
                 'New Investment Received!',
-                htmlspecialchars($user['name']) . ' invested $' . number_format($amount, 2) . ' in your game "' . htmlspecialchars($project['title']) . '"',
+                htmlspecialchars($user['username']) . ' invested $' . number_format($amount, 2) . ' in your game "' . htmlspecialchars($project['title']) . '"',
                 'index.php?page=game&id=' . $project_id
             );
 

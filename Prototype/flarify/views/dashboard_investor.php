@@ -1,12 +1,12 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'investor') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'investor') {
     header("Location: index.php?page=login");
     exit;
 }
 $user = $_SESSION['user'];
 
-$stmt = $pdo->query("SELECT p.*, u.name AS dev_name FROM projects p JOIN users u ON p.developer_id=u.id ORDER BY p.id DESC");
+$stmt = $pdo->query("SELECT p.*, u.username AS dev_name, t.team_name FROM projects p JOIN users u ON p.developer_id=u.id LEFT JOIN teams t ON p.team_id = t.id ORDER BY p.created_at DESC");
 $projects = $stmt->fetchAll();
 ?>
 <link rel="stylesheet" href="assets/dashboard-styles.css">
@@ -18,7 +18,7 @@ $projects = $stmt->fetchAll();
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="#">GAMES</a>
+        <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
     <div class="dashboard-search">
@@ -29,8 +29,8 @@ $projects = $stmt->fetchAll();
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -114,7 +114,7 @@ $projects = $stmt->fetchAll();
                         <div style="font-size:0.75rem; color:#666;">
                             <i class="fas fa-download"></i> <?= number_format($p['downloads'] ?? 0) ?> downloads
                         </div>
-                        <p class="game-description"><?= htmlspecialchars(substr($p['description'], 0, 100)) ?><?= strlen($p['description']) > 100 ? '...' : '' ?></p>
+                        <p class="game-description"><?= htmlspecialchars(substr($p['projectdescription'], 0, 100)) ?><?= strlen($p['projectdescription']) > 100 ? '...' : '' ?></p>
                         <div class="game-tags">
                             <span class="game-tag"><i class="fas fa-envelope"></i> Contact Developer</span>
                         </div>

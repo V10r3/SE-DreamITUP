@@ -138,6 +138,12 @@ body {
     color: #666;
     cursor: pointer;
     margin-left: 10px;
+    transition: color 0.3s;
+    font-size: 1rem;
+}
+
+.password-toggle:hover {
+    color: #333;
 }
 
 /* Form Options */

@@ -41,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $hash = password_hash($password, PASSWORD_ARGON2ID);
 
             try {
-                $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
+                $stmt = $pdo->prepare("INSERT INTO users (username,email,userpassword,userrole) VALUES (?,?,?,?)");
                 $stmt->execute([$name,$email,$hash,$role]);
 
                 $_SESSION['user'] = [
                     'id' => $pdo->lastInsertId(),
-                    'name' => $name,
+                    'username' => $name,
                     'email' => $email,
-                    'role' => $role
+                    'userrole' => $role
                 ];
                 header("Location: index.php?page=dashboard");
                 exit;
@@ -129,11 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="input-group">
                     <i class="fas fa-lock input-icon"></i>
-                    <input name="password" type="password" placeholder="Password" class="form-input" required />
+                    <input name="password" type="password" placeholder="Password" class="form-input" id="signupPassword" required />
+                    <i class="fas fa-eye password-toggle" id="toggleSignupPassword"></i>
                 </div>
                 <div class="input-group">
                     <i class="fas fa-lock input-icon"></i>
-                    <input name="confirm" type="password" placeholder="Confirm Password" class="form-input" required />
+                    <input name="confirm" type="password" placeholder="Confirm Password" class="form-input" id="signupConfirm" required />
+                    <i class="fas fa-eye password-toggle" id="toggleSignupConfirm"></i>
                 </div>
                 <div class="role-selection-modern">
                     <label class="role-label">Select Your Role:</label>
@@ -159,5 +161,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
-    </form>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+// Password visibility toggle for signup
+const toggleSignupPassword = document.getElementById('toggleSignupPassword');
+const signupPassword = document.getElementById('signupPassword');
+const toggleSignupConfirm = document.getElementById('toggleSignupConfirm');
+const signupConfirm = document.getElementById('signupConfirm');
+
+if (toggleSignupPassword && signupPassword) {
+    toggleSignupPassword.addEventListener('click', function() {
+        const type = signupPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+        signupPassword.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+}
+
+if (toggleSignupConfirm && signupConfirm) {
+    toggleSignupConfirm.addEventListener('click', function() {
+        const type = signupConfirm.getAttribute('type') === 'password' ? 'text' : 'password';
+        signupConfirm.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+}
+</script>

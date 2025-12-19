@@ -31,15 +31,15 @@ USE Flarify;
 -- Stores user accounts (developers, testers, investors)
 -- ============================================
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
+  userid INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NOT NULL,
   email VARCHAR(150) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL COMMENT 'Argon2ID hashed password',
-  role ENUM('developer','tester','investor') NOT NULL,
+  userpassword VARCHAR(255) NOT NULL COMMENT 'Argon2ID hashed password',
+  userrole ENUM('developer','tester','investor') NOT NULL,
   theme ENUM('light', 'dark', 'auto') DEFAULT 'light' COMMENT 'User theme preference',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_email (email),
-  INDEX idx_role (role)
+  INDEX idx_role (userrole)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -49,8 +49,10 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS projects (
   id INT AUTO_INCREMENT PRIMARY KEY,
   developer_id INT NOT NULL,
+  team_id INT DEFAULT NULL COMMENT 'Team that created this project (optional)',
   title VARCHAR(150) NOT NULL,
-  description TEXT,
+  projectdescription TEXT,
+  credit_type ENUM('developer', 'team', 'both') DEFAULT 'developer' COMMENT 'Who gets credited',
   price DECIMAL(10,2),
   demo_flag BOOLEAN DEFAULT FALSE,
   file_path VARCHAR(255),
@@ -64,7 +66,9 @@ CREATE TABLE IF NOT EXISTS projects (
   downloads INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (developer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
   INDEX idx_developer (developer_id),
+  INDEX idx_team (team_id),
   INDEX idx_rating (rating),
   INDEX idx_platform (platform),
   INDEX idx_created (created_at)
@@ -75,9 +79,11 @@ CREATE TABLE IF NOT EXISTS projects (
 -- Tracks individual user ratings for games
 -- ============================================
 CREATE TABLE IF NOT EXISTS project_ratings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  project_id INT NOT NULL,
-  user_id INT NOT NULL,
+  ratingid INT AUTO_INCREMENT PRIMARY KEY,
+  projectid INT NOT NULL,
+  foreign key (projectid) references projects(projectid) on update cascade on delete cascade,
+  userid INT NOT NULL,
+  foreign key (userid) references users(userid) on update cascade on delete cascade,
   rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -113,14 +119,14 @@ CREATE TABLE IF NOT EXISTS investments (
   project_id INT NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
   equity_percentage DECIMAL(5,2) DEFAULT NULL COMMENT 'Optional: percentage ownership',
-  status ENUM('pending', 'active', 'completed', 'cancelled') DEFAULT 'active',
+  investmentstatus ENUM('pending', 'active', 'completed', 'cancelled') DEFAULT 'active',
   notes TEXT DEFAULT NULL,
   invested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (investor_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   INDEX idx_investor (investor_id),
   INDEX idx_project (project_id),
-  INDEX idx_status (status),
+  INDEX idx_status (investmentstatus),
   INDEX idx_invested (invested_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -148,7 +154,7 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS notifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  type VARCHAR(50) NOT NULL COMMENT 'message, rating, investment, download, system',
+  notificationtype VARCHAR(50) NOT NULL COMMENT 'message, rating, investment, download, system',
   title VARCHAR(255) NOT NULL,
   message TEXT NOT NULL,
   link VARCHAR(255) DEFAULT NULL,
@@ -156,7 +162,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_user_read (user_id, is_read),
-  INDEX idx_type (type),
+  INDEX idx_type (notificationtype),
   INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -182,8 +188,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
 CREATE TABLE IF NOT EXISTS collections (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
+  collectionname VARCHAR(100) NOT NULL,
+  collectiondescription TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_user (user_id)
@@ -213,7 +219,7 @@ CREATE TABLE IF NOT EXISTS testing_queue (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tester_id INT NOT NULL,
   project_id INT NOT NULL,
-  status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+  testingstatus ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
   notes TEXT,
   added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   completed_at TIMESTAMP NULL,
@@ -221,7 +227,39 @@ CREATE TABLE IF NOT EXISTS testing_queue (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   UNIQUE KEY unique_test_item (tester_id, project_id),
   INDEX idx_tester (tester_id),
-  INDEX idx_status (status)
+  INDEX idx_status (testingstatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TEAMS TABLE
+-- Developer teams for collaborative projects
+-- ============================================
+CREATE TABLE IF NOT EXISTS teams (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  team_name VARCHAR(150) NOT NULL,
+  teamdescription TEXT,
+  owner_id INT NOT NULL COMMENT 'User who created the team',
+  avatar_path VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_owner (owner_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TEAM MEMBERS TABLE
+-- Maps developers to teams (many-to-many)
+-- ============================================
+CREATE TABLE IF NOT EXISTS team_members (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  team_id INT NOT NULL,
+  user_id INT NOT NULL,
+  memberrole ENUM('owner', 'admin', 'member') DEFAULT 'member',
+  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_team_member (team_id, user_id),
+  INDEX idx_team (team_id),
+  INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

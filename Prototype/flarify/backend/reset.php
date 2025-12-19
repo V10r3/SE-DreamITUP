@@ -28,7 +28,7 @@ try {
         } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Token is valid and form submitted
             $newHash = password_hash($_POST['password'], PASSWORD_ARGON2ID);
-            $pdo->prepare("UPDATE users SET password=? WHERE id=?")->execute([$newHash, $reset['user_id']]);
+            $pdo->prepare("UPDATE users SET userpassword=? WHERE id=?")->execute([$newHash, $reset['user_id']]);
             
             // Delete used token
             $pdo->prepare("DELETE FROM password_resets WHERE token=?")->execute([$token]);

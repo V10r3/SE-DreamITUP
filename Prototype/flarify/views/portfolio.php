@@ -1,6 +1,6 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'investor') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'investor') {
     header("Location: index.php?page=dashboard");
     exit;
 }
@@ -9,7 +9,7 @@ $user = $_SESSION['user'];
 
 // Get portfolio (invested projects with stats)
 $stmt = $pdo->prepare("
-    SELECT p.*, u.name AS developer_name, 
+    SELECT p.*, u.username AS developer_name, 
            i.amount AS invested_amount,
            i.equity_percentage,
            i.invested_at,
@@ -270,8 +270,8 @@ foreach ($portfolio as $item) {
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>

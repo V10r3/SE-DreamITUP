@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$sender_id,$receiver_id,$content]);
         
         // Create notification for receiver
-        $sender_name = $_SESSION['user']['name'];
+        $sender_name = $_SESSION['user']['username'];
         $preview = strlen($content) > 50 ? substr($content, 0, 50) . '...' : $content;
         createNotification(
             $pdo,

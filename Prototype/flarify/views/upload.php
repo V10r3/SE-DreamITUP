@@ -1,6 +1,6 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'developer') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'developer') {
     header("Location: index.php?page=login");
     exit;
 }
@@ -8,6 +8,17 @@ $user = $_SESSION['user'];
 
 $error = "";
 $success = "";
+
+// Fetch user's teams (where they are a member)
+$stmt = $pdo->prepare("
+    SELECT t.id, t.team_name 
+    FROM teams t
+    INNER JOIN team_members tm ON t.id = tm.team_id
+    WHERE tm.user_id = ?
+    ORDER BY t.team_name ASC
+");
+$stmt->execute([$user['id']]);
+$user_teams = $stmt->fetchAll();
 
 // Handle delete request
 if (isset($_GET['delete'])) {
@@ -86,8 +97,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "File size exceeds 10GB limit. Please compress your game or contact support.";
             } else {
                 if (move_uploaded_file($_FILES["gamefile"]["tmp_name"], $targetFile)) {
-                    $stmt = $pdo->prepare("INSERT INTO projects (developer_id,title,description,price,demo_flag,file_path,platform,age_rating) VALUES (?,?,?,?,?,?,?,?)");
-                    $stmt->execute([$user['id'],$title,$description,$price,$demo_flag,$targetFile,$platform,$age_rating]);
+                    // Get team and credit type
+                    $team_id = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
+                    $credit_type = isset($_POST['credit_type']) ? $_POST['credit_type'] : 'developer';
+                    
+                    // If team selected, validate user is member
+                    if ($team_id) {
+                        $stmt = $pdo->prepare("SELECT 1 FROM team_members WHERE team_id=? AND user_id=?");
+                        $stmt->execute([$team_id, $user['id']]);
+                        if (!$stmt->fetch()) {
+                            $team_id = null; // Invalid team, reset
+                            $credit_type = 'developer';
+                        }
+                    }
+                    
+                    $stmt = $pdo->prepare("INSERT INTO projects (developer_id,title,projectdescription,price,demo_flag,file_path,platform,age_rating,team_id,credit_type) VALUES (?,?,?,?,?,?,?,?,?,?)");
+                    $stmt->execute([$user['id'],$title,$description,$price,$demo_flag,$targetFile,$platform,$age_rating,$team_id,$credit_type]);
                     $success = "Game uploaded successfully!";
                     // Refresh uploads list
                     $stmt = $pdo->prepare("SELECT * FROM projects WHERE developer_id=? ORDER BY id DESC");
@@ -146,7 +171,6 @@ setTimeout(function() {
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -158,8 +182,8 @@ setTimeout(function() {
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -177,9 +201,13 @@ setTimeout(function() {
             <i class="fas fa-book"></i>
             <span>Library</span>
         </a>
-        <a href="#" class="sidebar-item">
+        <a href="index.php?page=collections" class="sidebar-item">
             <i class="fas fa-play-circle"></i>
             <span>Collections</span>
+        </a>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
         </a>
         <a href="index.php?page=messages" class="sidebar-item">
             <i class="fas fa-comments"></i>
@@ -219,11 +247,6 @@ setTimeout(function() {
                                 • <a href="#">Change display name</a>
                             </p>
                             <p class="file-meta">0 Downloads, <?= date('F j \a\t g:i A', strtotime($upload['created_at'] ?? 'now')) ?></p>
-                            <select class="file-type-select">
-                                <option>Graphical assets</option>
-                                <option>Game executable</option>
-                                <option>Source code</option>
-                            </select>
                         </div>
                         <div class="file-actions">
                             <a href="index.php?page=edit&id=<?= $upload['id'] ?>" class="link-action">
@@ -319,6 +342,40 @@ setTimeout(function() {
                                 <option value="Adults Only 18+">Adults Only 18+</option>
                             </select>
                         </label>
+                        
+                        <?php if (count($user_teams) > 0): ?>
+                        <div style="margin-bottom:20px; padding:15px; background:#f9f9f9; border-radius:8px; border:1px solid #e0e0e0;">
+                            <strong style="color:#333; display:block; margin-bottom:10px;">
+                                <i class="fas fa-users"></i> Team Credit Options
+                            </strong>
+                            
+                            <label style="display:block; margin-bottom:10px;">
+                                <strong style="color:#555; font-size:0.9rem;">Select Team (Optional):</strong>
+                                <select name="team_id" id="team_id" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; margin-top:5px; cursor:pointer;" onchange="toggleCreditOptions()">
+                                    <option value="">No Team (Personal Project)</option>
+                                    <?php foreach ($user_teams as $team): ?>
+                                        <option value="<?= $team['id'] ?>"><?= htmlspecialchars($team['team_name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            
+                            <div id="creditTypeOptions" style="display:none; margin-top:15px;">
+                                <strong style="color:#555; font-size:0.9rem; display:block; margin-bottom:8px;">Credit:</strong>
+                                <label style="display:block; margin-bottom:8px; cursor:pointer;">
+                                    <input type="radio" name="credit_type" value="developer" checked style="margin-right:8px;">
+                                    <span style="color:#333;">Just Me</span>
+                                </label>
+                                <label style="display:block; margin-bottom:8px; cursor:pointer;">
+                                    <input type="radio" name="credit_type" value="team" style="margin-right:8px;">
+                                    <span style="color:#333;">Just the Team</span>
+                                </label>
+                                <label style="display:block; margin-bottom:8px; cursor:pointer;">
+                                    <input type="radio" name="credit_type" value="both" style="margin-right:8px;">
+                                    <span style="color:#333;">Both Me & Team</span>
+                                </label>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                         
                         <div style="margin-bottom:15px;">
                             <label class="checkbox-label">
@@ -596,5 +653,22 @@ function cancelUpload() {
     const previewImg = document.getElementById('previewImage');
     previewImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150'%3E%3Crect fill='%23f0f0f0' width='200' height='150'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23999' font-size='14' dy='.3em'%3ENo Preview%3C/text%3E%3C/svg%3E";
     document.getElementById('screenshotInput').value = '';
+    
+    // Hide credit options
+    const creditOptions = document.getElementById('creditTypeOptions');
+    if (creditOptions) creditOptions.style.display = 'none';
+}
+
+function toggleCreditOptions() {
+    const teamSelect = document.getElementById('team_id');
+    const creditOptions = document.getElementById('creditTypeOptions');
+    
+    if (teamSelect && creditOptions) {
+        if (teamSelect.value) {
+            creditOptions.style.display = 'block';
+        } else {
+            creditOptions.style.display = 'none';
+        }
+    }
 }
 </script>

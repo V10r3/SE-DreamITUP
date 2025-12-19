@@ -1,9 +1,47 @@
 /* Dashboard Styles */
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     margin: 0;
     padding: 0;
     font-family: 'Inter', 'Arial', sans-serif;
     background: #F5F5F5;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Smooth scrolling for content areas */
+* {
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for better appearance */
+.dashboard-content::-webkit-scrollbar,
+.dashboard-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dashboard-content::-webkit-scrollbar-track,
+.dashboard-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb,
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+    background: #9B59FF;
+    border-radius: 4px;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb:hover,
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #7B3FD0;
 }
 
 /* Top Navigation Bar */
@@ -14,6 +52,13 @@ body {
     justify-content: space-between;
     align-items: center;
     color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 70px;
+    box-sizing: border-box;
 }
 
 .dashboard-brand {
@@ -103,7 +148,12 @@ body {
 /* Main Layout */
 .dashboard-layout {
     display: flex;
-    min-height: calc(100vh - 70px);
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100vh - 70px);
 }
 
 /* Sidebar */
@@ -112,12 +162,14 @@ body {
     background: white;
     padding: 20px 0;
     box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-    position: sticky;
-    top: 0;
-    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 70px;
+    height: calc(100vh - 70px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    z-index: 100;
 }
 
 .sidebar-item {
@@ -151,6 +203,11 @@ body {
 .dashboard-content {
     flex: 1;
     padding: 40px;
+    margin-left: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .welcome-header {

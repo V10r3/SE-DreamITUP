@@ -1,6 +1,6 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'tester') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'tester') {
     header("Location: index.php?page=login");
     exit;
 }
@@ -15,7 +15,6 @@ $user = $_SESSION['user'];
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -26,8 +25,8 @@ $user = $_SESSION['user'];
     <div class="dashboard-user-area">
         <?php include "partials/notifications.php"; ?>
         <div class="user-profile" style="cursor:pointer;" onclick="window.location.href='index.php?page=profile'">
-            <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-            <span><?= htmlspecialchars($user['name']) ?></span>
+            <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+            <span><?= htmlspecialchars($user['username']) ?></span>
         </div>
     </div>
 </div>

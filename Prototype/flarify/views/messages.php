@@ -34,7 +34,7 @@ $stmt = $pdo->prepare("
             WHEN m.sender_id = ? THEN m.receiver_id 
             ELSE m.sender_id 
         END AS other_user_id,
-        u.name AS other_user_name,
+        u.username AS other_user_name,
         (SELECT content FROM messages 
          WHERE (sender_id = ? AND receiver_id = other_user_id) 
             OR (sender_id = other_user_id AND receiver_id = ?)
@@ -68,8 +68,8 @@ if ($selected_user_id) {
     // Get messages for this conversation
     $stmt = $pdo->prepare("
         SELECT m.*, 
-               sender.name AS sender_name,
-               receiver.name AS receiver_name
+               sender.username AS sender_name,
+               receiver.username AS receiver_name
         FROM messages m
         JOIN users sender ON m.sender_id = sender.id
         JOIN users receiver ON m.receiver_id = receiver.id
@@ -84,11 +84,11 @@ if ($selected_user_id) {
 // Get all users for new conversation (exclude current user and already chatting users)
 $existing_chat_ids = array_column($conversations, 'other_user_id');
 $placeholders = $existing_chat_ids ? str_repeat('?,', count($existing_chat_ids) - 1) . '?' : '';
-$sql = "SELECT id, name, email, role FROM users WHERE id != ?";
+$sql = "SELECT id, username, email, userrole FROM users WHERE id != ?";
 if ($placeholders) {
     $sql .= " AND id NOT IN ($placeholders)";
 }
-$sql .= " ORDER BY name ASC";
+$sql .= " ORDER BY username ASC";
 $stmt = $pdo->prepare($sql);
 $params = array_merge([$user['id']], $existing_chat_ids);
 $stmt->execute($params);
@@ -471,7 +471,6 @@ $available_users = $stmt->fetchAll();
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages" class="active">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -483,8 +482,8 @@ $available_users = $stmt->fetchAll();
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -499,7 +498,7 @@ $available_users = $stmt->fetchAll();
             <span>Explore</span>
         </a>
         
-        <?php if ($user['role'] === 'investor'): ?>
+        <?php if ($user['userrole'] === 'investor'): ?>
         <a href="index.php?page=portfolio" class="sidebar-item">
             <i class="fas fa-briefcase"></i>
             <span>Portfolio</span>
@@ -519,22 +518,29 @@ $available_users = $stmt->fetchAll();
         </a>
         <?php endif; ?>
         
+        <?php if ($user['userrole'] === 'developer'): ?>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
+        </a>
+        <?php endif; ?>
+        
         <a href="index.php?page=messages" class="sidebar-item active">
             <i class="fas fa-comments"></i>
             <span>Messages</span>
         </a>
         
-        <?php if ($user['role'] === 'developer'): ?>
+        <?php if ($user['userrole'] === 'developer'): ?>
         <a href="index.php?page=upload" class="sidebar-item">
             <i class="fas fa-folder-plus"></i>
             <span>Created Projects</span>
         </a>
-        <?php elseif ($user['role'] === 'tester'): ?>
+        <?php elseif ($user['userrole'] === 'tester'): ?>
         <a href="index.php?page=testing_queue" class="sidebar-item">
             <i class="fas fa-flask"></i>
             <span>Testing Queue</span>
         </a>
-        <?php elseif ($user['role'] === 'investor'): ?>
+        <?php elseif ($user['userrole'] === 'investor'): ?>
         <a href="index.php?page=watchlist" class="sidebar-item">
             <i class="fas fa-star"></i>
             <span>Watchlist</span>
@@ -585,7 +591,7 @@ $available_users = $stmt->fetchAll();
         <div class="chat-area">
             <?php if ($selected_user): ?>
                 <div class="chat-header">
-                    <h2><?= htmlspecialchars($selected_user['name']) ?></h2>
+                    <h2><?= htmlspecialchars($selected_user['username']) ?></h2>
                 </div>
                 
                 <div class="chat-messages" id="chatMessages">
@@ -638,13 +644,13 @@ $available_users = $stmt->fetchAll();
                 </div>
                 <?php else: ?>
                     <?php foreach ($available_users as $available_user): ?>
-                    <a href="index.php?page=messages&chat=<?= $available_user['id'] ?>" class="user-list-item" data-name="<?= strtolower(htmlspecialchars($available_user['name'])) ?>">
+                    <a href="index.php?page=messages&chat=<?= $available_user['id'] ?>" class="user-list-item" data-name="<?= strtolower(htmlspecialchars($available_user['username'])) ?>">
                         <div class="user-list-avatar">
-                            <?= strtoupper(substr($available_user['name'], 0, 1)) ?>
+                            <?= strtoupper(substr($available_user['username'], 0, 1)) ?>
                         </div>
                         <div class="user-list-info">
-                            <div class="user-list-name"><?= htmlspecialchars($available_user['name']) ?></div>
-                            <div class="user-list-role"><?= htmlspecialchars($available_user['role']) ?></div>
+                            <div class="user-list-name"><?= htmlspecialchars($available_user['username']) ?></div>
+                            <div class="user-list-role"><?= htmlspecialchars($available_user['userrole']) ?></div>
                         </div>
                     </a>
                     <?php endforeach; ?>

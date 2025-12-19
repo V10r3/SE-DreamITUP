@@ -18,15 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($password)) {
         $error = "Please enter your password.";
     } else {
-        // Check user by name or email
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE name=? OR email=?");
+        // Check user by username or email
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username=? OR email=?");
         $stmt->execute([$username,$username]);
         $user = $stmt->fetch();
 
         if (!$user) {
             error_log("Login failed: user not found - $username");
             $error = "No account found with that username or email.";
-        } elseif (!password_verify($password, $user['password'])) {
+        } elseif (!password_verify($password, $user['userpassword'])) {
             error_log("Login failed: wrong password for user - $username");
             $error = "Incorrect password. Please try again.";
         } else {
@@ -102,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="input-group">
                     <i class="fas fa-lock input-icon"></i>
-                    <input name="password" type="password" placeholder="Password" class="form-input" required />
-                    <i class="fas fa-eye password-toggle"></i>
+                    <input name="password" type="password" placeholder="Password" class="form-input" id="loginPassword" required />
+                    <i class="fas fa-eye password-toggle" id="toggleLoginPassword"></i>
                 </div>
                 <div class="form-options">
                     <label class="remember-label">
@@ -119,3 +119,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
+
+<script>
+// Password visibility toggle
+const toggleLoginPassword = document.getElementById('toggleLoginPassword');
+const loginPassword = document.getElementById('loginPassword');
+
+if (toggleLoginPassword && loginPassword) {
+    toggleLoginPassword.addEventListener('click', function() {
+        const type = loginPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+        loginPassword.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+}
+</script>

@@ -27,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         if ($stmt->fetch()) {
             $error = "Email is already taken.";
         } else {
-            $stmt = $pdo->prepare("UPDATE users SET name=?, email=? WHERE id=?");
+            $stmt = $pdo->prepare("UPDATE users SET username=?, email=? WHERE id=?");
             $stmt->execute([$name, $email, $user['id']]);
-            $_SESSION['user']['name'] = $name;
+            $_SESSION['user']['username'] = $name;
             $_SESSION['user']['email'] = $email;
             $user = $_SESSION['user'];
             $success = "Profile updated successfully!";
@@ -51,13 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
         $error = "Password must be at least 8 characters.";
     } else {
         // Verify current password
-        $stmt = $pdo->prepare("SELECT password FROM users WHERE id=?");
+        $stmt = $pdo->prepare("SELECT userpassword FROM users WHERE id=?");
         $stmt->execute([$user['id']]);
         $userData = $stmt->fetch();
-        
-        if (password_verify($current_password, $userData['password'])) {
+
+        if (password_verify($current_password, $userData['userpassword'])) {
             $newHash = password_hash($new_password, PASSWORD_ARGON2ID);
-            $stmt = $pdo->prepare("UPDATE users SET password=? WHERE id=?");
+            $stmt = $pdo->prepare("UPDATE users SET userpassword=? WHERE id=?");
             $stmt->execute([$newHash, $user['id']]);
             $success = "Password changed successfully!";
         } else {
@@ -105,7 +105,6 @@ setTimeout(function() {
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -116,8 +115,8 @@ setTimeout(function() {
     <div class="dashboard-user-area">
         <?php include "partials/notifications.php"; ?>
         <div class="user-profile" style="cursor:pointer;" onclick="window.location.href='index.php?page=profile'">
-            <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-            <span><?= htmlspecialchars($user['name']) ?></span>
+            <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+            <span><?= htmlspecialchars($user['username']) ?></span>
         </div>
     </div>
 </div>
@@ -131,7 +130,7 @@ setTimeout(function() {
             <span>Explore</span>
         </a>
         
-        <?php if ($user['role'] === 'investor'): ?>
+        <?php if ($user['userrole'] === 'investor'): ?>
         <a href="index.php?page=portfolio" class="sidebar-item">
             <i class="fas fa-briefcase"></i>
             <span>Portfolio</span>
@@ -145,9 +144,16 @@ setTimeout(function() {
             <i class="fas fa-book"></i>
             <span>Library</span>
         </a>
-        <a href="#" class="sidebar-item">
+        <a href="index.php?page=collections" class="sidebar-item">
             <i class="fas fa-play-circle"></i>
             <span>Collections</span>
+        </a>
+        <?php endif; ?>
+        
+        <?php if ($user['userrole'] === 'developer'): ?>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
         </a>
         <?php endif; ?>
         
@@ -156,12 +162,12 @@ setTimeout(function() {
             <span>Messages</span>
         </a>
         
-        <?php if ($user['role'] === 'developer'): ?>
+        <?php if ($user['userrole'] === 'developer'): ?>
         <a href="index.php?page=upload" class="sidebar-item">
             <i class="fas fa-folder-plus"></i>
             <span>Created Projects</span>
         </a>
-        <?php elseif ($user['role'] === 'investor'): ?>
+        <?php elseif ($user['userrole'] === 'investor'): ?>
         <a href="index.php?page=watchlist" class="sidebar-item">
             <i class="fas fa-star"></i>
             <span>Watchlist</span>
@@ -187,15 +193,15 @@ setTimeout(function() {
             <div style="background:white; padding:40px; border-radius:15px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-bottom:30px;">
                 <div style="text-align:center; margin-bottom:30px;">
                     <div style="width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg, #9B59FF, #C48FFF); color:white; display:flex; align-items:center; justify-content:center; font-size:3rem; font-weight:bold; margin:0 auto 15px;">
-                        <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                        <?= strtoupper(substr($user['username'], 0, 1)) ?>
                     </div>
-                    <h2 style="margin:0; color:#333;"><?= htmlspecialchars($user['name']) ?></h2>
+                    <h2 style="margin:0; color:#333;"><?= htmlspecialchars($user['username']) ?></h2>
                     <p style="color:#666; margin:5px 0;">
                         <i class="fas fa-envelope"></i> <?= htmlspecialchars($user['email']) ?>
                     </p>
                     <span style="display:inline-block; margin-top:10px; padding:5px 15px; background:#F0E6FF; color:#9B59FF; border-radius:20px; font-size:0.9rem; font-weight:600;">
-                        <i class="fas fa-<?= $user['role'] === 'developer' ? 'code' : ($user['role'] === 'tester' ? 'flask' : 'money-bill-wave') ?>"></i>
-                        <?= ucfirst($user['role']) ?>
+                        <i class="fas fa-<?= $user['userrole'] === 'developer' ? 'code' : ($user['userrole'] === 'tester' ? 'flask' : 'money-bill-wave') ?>"></i>
+                        <?= ucfirst($user['userrole']) ?>
                     </span>
                 </div>
 
@@ -208,7 +214,7 @@ setTimeout(function() {
                         <label style="display:block; margin-bottom:8px; color:#333; font-weight:600;">
                             Name
                         </label>
-                        <input type="text" name="name" value="<?= htmlspecialchars($user['name']) ?>" required 
+                        <input type="text" name="name" value="<?= htmlspecialchars($user['username']) ?>" required 
                                style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem;">
                     </div>
 

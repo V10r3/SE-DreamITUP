@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Prevent developers from rating their own games
-    if ($user['role'] === 'developer' && $project['developer_id'] == $user['id']) {
+    if ($user['userrole'] === 'developer' && $project['developer_id'] == $user['id']) {
         $response['message'] = 'You cannot rate your own game.';
         echo json_encode($response);
         exit;
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $project_info['developer_id'],
                 'rating',
                 'New Rating Received',
-                $user['name'] . ' rated your game "' . $project_info['title'] . '" ' . $rating . ' stars!',
+                $user['username'] . ' rated your game "' . $project_info['title'] . '" ' . $rating . ' stars!',
                 'index.php?page=game&id=' . $project_id
             );
         }

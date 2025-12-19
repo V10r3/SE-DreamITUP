@@ -47,7 +47,7 @@ function requireAuth() {
  */
 function requireRole($role) {
     requireAuth();
-    if ($_SESSION['user']['role'] !== $role) {
+    if ($_SESSION['user']['userrole'] !== $role) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Access denied']);
         exit;

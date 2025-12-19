@@ -30,10 +30,10 @@ switch ($page) {
   case 'about': include "views/about.php"; break;
   case 'contact': include "views/contact.php"; break;
   case 'dashboard':
-    if (isset($_SESSION['user']['role'])) {
-      if ($_SESSION['user']['role'] === 'developer') include "views/dashboard_developer.php";
-      elseif ($_SESSION['user']['role'] === 'tester') include "views/dashboard_tester.php";
-      elseif ($_SESSION['user']['role'] === 'investor') include "views/dashboard_investor.php";
+    if (isset($_SESSION['user']['userrole'])) {
+      if ($_SESSION['user']['userrole'] === 'developer') include "views/dashboard_developer.php";
+      elseif ($_SESSION['user']['userrole'] === 'tester') include "views/dashboard_tester.php";
+      elseif ($_SESSION['user']['userrole'] === 'investor') include "views/dashboard_investor.php";
     } else {
       header("Location: index.php?page=login");
       exit;
@@ -42,6 +42,7 @@ switch ($page) {
   case 'upload': include "views/upload.php"; break;
   case 'library': include "views/library.php"; break;
   case 'collections': include "views/collections.php"; break;
+  case 'teams': include "views/teams.php"; break;
   case 'testing_queue': include "views/testing_queue.php"; break;
   case 'watchlist': include "views/watchlist.php"; break;
   case 'portfolio': include "views/portfolio.php"; break;

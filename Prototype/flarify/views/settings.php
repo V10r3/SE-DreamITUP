@@ -31,7 +31,6 @@ $user = $_SESSION['user'];
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -42,8 +41,8 @@ $user = $_SESSION['user'];
     <div class="dashboard-user-area">
         <?php include "partials/notifications.php"; ?>
         <div class="user-profile" style="cursor:pointer;" onclick="window.location.href='index.php?page=profile'">
-            <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-            <span><?= htmlspecialchars($user['name']) ?></span>
+            <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+            <span><?= htmlspecialchars($user['username']) ?></span>
         </div>
     </div>
 </div>
@@ -60,15 +59,21 @@ $user = $_SESSION['user'];
             <i class="fas fa-book"></i>
             <span>Library</span>
         </a>
-        <a href="#" class="sidebar-item">
+        <a href="index.php?page=collections" class="sidebar-item">
             <i class="fas fa-play-circle"></i>
             <span>Collections</span>
         </a>
+        <?php if ($user['userrole'] === 'developer'): ?>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
+        </a>
+        <?php endif; ?>
         <a href="index.php?page=messages" class="sidebar-item">
             <i class="fas fa-comments"></i>
             <span>Messages</span>
         </a>
-        <?php if ($user['role'] === 'developer'): ?>
+        <?php if ($user['userrole'] === 'developer'): ?>
         <a href="index.php?page=upload" class="sidebar-item">
             <i class="fas fa-folder-plus"></i>
             <span>Created Projects</span>
@@ -107,7 +112,7 @@ $user = $_SESSION['user'];
                     <div>
                         <h4 style="margin:0 0 5px 0; color:#333;">Account Type</h4>
                         <p style="margin:0; color:#666; font-size:0.9rem;">
-                            You are registered as: <strong><?= ucfirst($user['role']) ?></strong>
+                            You are registered as: <strong><?= ucfirst($user['userrole']) ?></strong>
                         </p>
                     </div>
                 </div>

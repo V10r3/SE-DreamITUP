@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password'])) {
+    if ($user && password_verify($password, $user['userpassword'])) {
         $_SESSION['user'] = $user;
         header("Location:../index.php?page=dashboard");
     } else {

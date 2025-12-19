@@ -14,7 +14,7 @@ require "../config.php";
 session_start();
 
 // Authorization check: Only developers can upload games
-if ($_SESSION['user']['role'] !== 'developer') {
+if ($_SESSION['user']['userrole'] !== 'developer') {
     die("Unauthorized");
 }
 
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $targetFile = $targetDir . time() . "_" . $filename;
 
     if (move_uploaded_file($_FILES["gamefile"]["tmp_name"], $targetFile)) {
-        $stmt = $pdo->prepare("INSERT INTO projects (developer_id,title,description,price,demo_flag,file_path) VALUES (?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO projects (developer_id,title,projectdescription,price,demo_flag,file_path) VALUES (?,?,?,?,?,?)");
         $stmt->execute([$_SESSION['user']['id'],$title,$description,$price,$demo_flag,$targetFile]);
         header("Location:../index.php?page=dashboard");
     } else {

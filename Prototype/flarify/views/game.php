@@ -6,9 +6,10 @@ if (!isset($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 $stmt = $pdo->prepare("
-    SELECT p.*, u.name AS dev_name, u.id AS dev_id
+    SELECT p.*, u.username AS dev_name, u.id AS dev_id, t.team_name, t.id AS team_id
     FROM projects p
     JOIN users u ON p.developer_id = u.id
+    LEFT JOIN teams t ON p.team_id = t.id
     WHERE p.id = ?
 ");
 $stmt->execute([$id]);
@@ -31,7 +32,7 @@ if ($user) {
 }
 
 // Check if user can rate (not the developer of this game)
-$can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] == $user['id']));
+$can_rate = $user && (!($user['userrole'] === 'developer' && $game['developer_id'] == $user['id']));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -285,7 +286,6 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
     <div class="dashboard-nav-links">
       <a href="index.php?page=dashboard">HOME</a>
       <a href="index.php?page=about">ABOUT US</a>
-      <a href="index.php?page=messages">INBOX</a>
       <a href="index.php?page=dashboard">GAMES</a>
       <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -297,8 +297,8 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
       <?php include "partials/notifications.php"; ?>
       <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
         <div class="user-profile" style="cursor:pointer;">
-          <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-          <span><?= htmlspecialchars($user['name']) ?></span>
+          <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+          <span><?= htmlspecialchars($user['username']) ?></span>
         </div>
       </a>
     </div>
@@ -312,7 +312,7 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
         <span>Explore</span>
       </a>
       
-      <?php if ($user['role'] === 'investor'): ?>
+      <?php if ($user['userrole'] === 'investor'): ?>
       <a href="index.php?page=portfolio" class="sidebar-item">
         <i class="fas fa-briefcase"></i>
         <span>Portfolio</span>
@@ -337,12 +337,12 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
         <span>Messages</span>
       </a>
       
-      <?php if ($user['role'] === 'developer'): ?>
+      <?php if ($user['userrole'] === 'developer'): ?>
       <a href="index.php?page=upload" class="sidebar-item">
         <i class="fas fa-folder-plus"></i>
         <span>Created Projects</span>
       </a>
-      <?php elseif ($user['role'] === 'tester'): ?>
+      <?php elseif ($user['userrole'] === 'tester'): ?>
       <a href="index.php?page=testing_queue" class="sidebar-item">
         <i class="fas fa-flask"></i>
         <span>Testing Queue</span>
@@ -370,7 +370,21 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
           <div class="game-title-section">
             <h1><?= htmlspecialchars($game['title']) ?></h1>
             <div class="game-meta">
-              by <a href="#"><?= htmlspecialchars($game['dev_name']) ?></a>
+              <?php
+              // Show credits based on credit_type
+              if (!empty($game['team_id'])) {
+                  $credit_type = $game['credit_type'] ?? 'developer';
+                  if ($credit_type === 'developer') {
+                      echo 'by <a href="#">' . htmlspecialchars($game['dev_name']) . '</a>';
+                  } elseif ($credit_type === 'team') {
+                      echo 'by <a href="index.php?page=teams"><i class="fas fa-users"></i> ' . htmlspecialchars($game['team_name']) . '</a>';
+                  } elseif ($credit_type === 'both') {
+                      echo 'by <a href="#">' . htmlspecialchars($game['dev_name']) . '</a> & <a href="index.php?page=teams"><i class="fas fa-users"></i> ' . htmlspecialchars($game['team_name']) . '</a>';
+                  }
+              } else {
+                  echo 'by <a href="#">' . htmlspecialchars($game['dev_name']) . '</a>';
+              }
+              ?>
             </div>
             <div class="game-platforms">
               <?php 
@@ -394,14 +408,14 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
               </a>
             <?php endif; ?>
             <div class="action-buttons">
-              <?php if (isset($_SESSION['user']) && $_SESSION['user']['role'] === 'investor'): ?>
+              <?php if (isset($_SESSION['user']) && $_SESSION['user']['userrole'] === 'investor'): ?>
               <button class="action-btn" style="background: linear-gradient(135deg, #4CAF50, #81C784); color: white; font-weight: 600;" onclick="openInvestModal()">
                 <i class="fas fa-hand-holding-usd"></i> Invest in this Game
               </button>
               <button class="action-btn" id="watchlistBtn" onclick="toggleWatchlist(<?= $game['id'] ?>)">
                 <i class="fas fa-star"></i> <span id="watchlistText">Add to Watchlist</span>
               </button>
-              <?php elseif (isset($_SESSION['user']) && $_SESSION['user']['role'] === 'tester'): ?>
+              <?php elseif (isset($_SESSION['user']) && $_SESSION['user']['userrole'] === 'tester'): ?>
               <button class="action-btn" id="testQueueBtn" style="background: linear-gradient(135deg, #FF9800, #FB8C00); color: white; font-weight: 600;" onclick="toggleTestingQueue(<?= $game['id'] ?>)">
                 <i class="fas fa-flask"></i> <span id="testQueueText">Add to Testing Queue</span>
               </button>
@@ -508,7 +522,7 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
             <span id="ratingMessage" style="color: #fff;"></span>
           </div>
         </div>
-        <?php elseif ($user && $user['role'] === 'developer' && $game['developer_id'] == $user['id']): ?>
+        <?php elseif ($user && $user['userrole'] === 'developer' && $game['developer_id'] == $user['id']): ?>
         <div class="game-section" style="background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
           <p style="color: #999; margin: 0;"><i class="fas fa-info-circle"></i> You cannot rate your own game.</p>
         </div>
@@ -518,12 +532,12 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
         <div class="game-section">
           <h2 class="section-title">About This Game</h2>
           <div class="game-description">
-            <?= nl2br(htmlspecialchars($game['description'])) ?>
+            <?= nl2br(htmlspecialchars($game['projectdescription'])) ?>
           </div>
         </div>
 
         <!-- Role-specific Actions -->
-        <?php if ($user['role'] === 'tester'): ?>
+        <?php if ($user['userrole'] === 'tester'): ?>
         <div class="feedback-section">
           <h2 class="section-title">Leave Feedback for Developer</h2>
           <?php if (isset($_GET['success']) && $_GET['success'] === 'sent'): ?>
@@ -540,7 +554,7 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
             </button>
           </form>
         </div>
-        <?php elseif ($user['role'] === 'investor'): ?>
+        <?php elseif ($user['userrole'] === 'investor'): ?>
         <div class="contact-developer">
           <h2 class="section-title">Interested in Funding This Project?</h2>
           <p>Connect with the developer to discuss investment opportunities.</p>
@@ -548,7 +562,7 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
             <i class="fas fa-envelope"></i> Contact Developer
           </a>
         </div>
-        <?php elseif ($user['role'] === 'developer' && $user['id'] === $game['dev_id']): ?>
+        <?php elseif ($user['userrole'] === 'developer' && $user['id'] === $game['dev_id']): ?>
         <div class="contact-developer">
           <h2 class="section-title">Manage Your Project</h2>
           <p>Update game files, screenshots, and description.</p>
@@ -733,7 +747,7 @@ $can_rate = $user && (!($user['role'] === 'developer' && $game['developer_id'] =
     }
     <?php endif; ?>
 
-    <?php if (isset($_SESSION['user']) && $_SESSION['user']['role'] === 'tester'): ?>
+    <?php if (isset($_SESSION['user']) && $_SESSION['user']['userrole'] === 'tester'): ?>
     // Testing queue functionality
     let inTestQueue = false;
 

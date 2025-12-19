@@ -1,13 +1,20 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'developer') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'developer') {
     header("Location: index.php?page=login");
     exit;
 }
 $user = $_SESSION['user'];
 
-$stmt = $pdo->prepare("SELECT * FROM projects WHERE developer_id=?");
-$stmt->execute([$user['id']]);
+// Get all projects (except the developer's own if needed for explore)
+$stmt = $pdo->prepare("
+    SELECT p.*, u.username AS dev_name, t.team_name 
+    FROM projects p 
+    LEFT JOIN users u ON p.developer_id = u.id
+    LEFT JOIN teams t ON p.team_id = t.id
+    ORDER BY p.created_at DESC
+");
+$stmt->execute();
 $projects = $stmt->fetchAll();
 ?>
 <link rel="stylesheet" href="assets/dashboard-styles.css">
@@ -19,7 +26,7 @@ $projects = $stmt->fetchAll();
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="#">GAMES</a>
+        <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
     <div class="dashboard-search">
@@ -30,8 +37,8 @@ $projects = $stmt->fetchAll();
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -52,6 +59,10 @@ $projects = $stmt->fetchAll();
         <a href="index.php?page=collections" class="sidebar-item">
             <i class="fas fa-play-circle"></i>
             <span>Collections</span>
+        </a>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
         </a>
         <a href="index.php?page=messages" class="sidebar-item">
             <i class="fas fa-comments"></i>
@@ -96,6 +107,11 @@ $projects = $stmt->fetchAll();
                     </div>
                     <div class="game-info">
                         <h3 class="game-title"><?= htmlspecialchars($p['title']) ?></h3>
+                        <?php if (!empty($p['team_name']) && $p['credit_type'] !== 'developer'): ?>
+                        <div style="font-size:0.8rem; color:#9B59FF; margin-bottom:5px;">
+                            <i class="fas fa-users"></i> <?= htmlspecialchars($p['team_name']) ?>
+                        </div>
+                        <?php endif; ?>
                         <div class="game-price">$<?= number_format($p['price'], 2) ?></div>
                         <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">
                             <i class="fas fa-desktop"></i> <?= htmlspecialchars($p['platform'] ?? 'Windows') ?>
@@ -116,7 +132,7 @@ $projects = $stmt->fetchAll();
                         <div style="font-size:0.75rem; color:#666; margin-top:5px;">
                             <i class="fas fa-download"></i> <?= number_format($p['downloads'] ?? 0) ?> downloads
                         </div>
-                        <p class="game-description"><?= htmlspecialchars(substr($p['description'], 0, 100)) ?><?= strlen($p['description']) > 100 ? '...' : '' ?></p>
+                        <p class="game-description"><?= htmlspecialchars(substr($p['projectdescription'], 0, 100)) ?><?= strlen($p['projectdescription']) > 100 ? '...' : '' ?></p>
                     </div>
                 </div>
                 <?php endforeach; ?>

@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Hash password using Argon2ID (most secure algorithm)
     $hash = password_hash($password, PASSWORD_ARGON2ID);
 
-    $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
+    $stmt = $pdo->prepare("INSERT INTO users (username,email,userpassword,userrole) VALUES (?,?,?,?)");
     $stmt->execute([$name,$email,$hash,$role]);
 
     $_SESSION['user'] = [

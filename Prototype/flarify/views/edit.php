@@ -1,6 +1,6 @@
 <?php
 require "config.php";
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'developer') {
+if (!isset($_SESSION['user']) || $_SESSION['user']['userrole'] !== 'developer') {
     header("Location: index.php?page=login");
     exit;
 }
@@ -27,6 +27,17 @@ if (!$project) {
     exit;
 }
 
+// Fetch user's teams
+$stmt = $pdo->prepare("
+    SELECT t.id, t.team_name 
+    FROM teams t
+    INNER JOIN team_members tm ON t.id = tm.team_id
+    WHERE tm.user_id = ?
+    ORDER BY t.team_name ASC
+");
+$stmt->execute([$user['id']]);
+$user_teams = $stmt->fetchAll();
+
 // Handle update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');
@@ -35,6 +46,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $demo_flag = isset($_POST['demo_flag']) ? 1 : 0;
     $platform = trim($_POST['platform'] ?? 'Windows');
     $age_rating = trim($_POST['age_rating'] ?? 'Everyone');
+    
+    // Get team and credit type
+    $team_id = !empty($_POST['team_id']) ? (int)$_POST['team_id'] : null;
+    $credit_type = isset($_POST['credit_type']) ? $_POST['credit_type'] : 'developer';
+    
+    // If team selected, validate user is member
+    if ($team_id) {
+        $stmt = $pdo->prepare("SELECT 1 FROM team_members WHERE team_id=? AND user_id=?");
+        $stmt->execute([$team_id, $user['id']]);
+        if (!$stmt->fetch()) {
+            $team_id = null;
+            $credit_type = 'developer';
+        }
+    }
 
     if (empty($title)) {
         $error = "Game title is required.";
@@ -100,8 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update database if no errors
         if (!$error) {
             $screenshotsJson = json_encode($screenshotPaths);
-            $stmt = $pdo->prepare("UPDATE projects SET title=?, description=?, price=?, demo_flag=?, file_path=?, banner_path=?, screenshots=?, platform=?, age_rating=? WHERE id=?");
-            $stmt->execute([$title, $description, $price, $demo_flag, $newFilePath, $newBannerPath, $screenshotsJson, $platform, $age_rating, $project_id]);
+            $stmt = $pdo->prepare("UPDATE projects SET title=?, projectdescription=?, price=?, demo_flag=?, file_path=?, banner_path=?, screenshots=?, platform=?, age_rating=?, team_id=?, credit_type=? WHERE id=?");
+            $stmt->execute([$title, $description, $price, $demo_flag, $newFilePath, $newBannerPath, $screenshotsJson, $platform, $age_rating, $team_id, $credit_type, $project_id]);
             $success = "Game updated successfully!";
             
             // Refresh project data
@@ -151,7 +176,6 @@ setTimeout(function() {
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -163,8 +187,8 @@ setTimeout(function() {
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -230,7 +254,7 @@ setTimeout(function() {
                             Description *
                         </label>
                         <textarea name="description" rows="6" required 
-                                  style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; resize:vertical;"><?= htmlspecialchars($project['description']) ?></textarea>
+                                  style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; resize:vertical;"><?= htmlspecialchars($project['projectdescription']) ?></textarea>
                     </div>
 
                     <div style="margin-bottom:25px;">
@@ -268,6 +292,42 @@ setTimeout(function() {
                             <option value="Adults Only 18+" <?= ($project['age_rating'] ?? '') === 'Adults Only 18+' ? 'selected' : '' ?>>Adults Only 18+</option>
                         </select>
                     </div>
+
+                    <?php if (count($user_teams) > 0): ?>
+                    <div style="margin-bottom:25px; padding:20px; background:#f9f9f9; border-radius:10px; border:1px solid #e0e0e0;">
+                        <label style="display:block; margin-bottom:12px; color:#333; font-weight:600;">
+                            <i class="fas fa-users"></i> Team Credit Options
+                        </label>
+                        
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block; margin-bottom:8px; color:#555;">Select Team (Optional):</label>
+                            <select name="team_id" id="team_id" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; cursor:pointer;" onchange="toggleCreditOptions()">
+                                <option value="">No Team (Personal Project)</option>
+                                <?php foreach ($user_teams as $team): ?>
+                                    <option value="<?= $team['id'] ?>" <?= ($project['team_id'] ?? '') == $team['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($team['team_name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div id="creditTypeOptions" style="<?= !empty($project['team_id']) ? 'display:block;' : 'display:none;' ?> margin-top:15px;">
+                            <label style="display:block; margin-bottom:8px; color:#555; font-weight:600;">Credit:</label>
+                            <label style="display:block; margin-bottom:10px; cursor:pointer;">
+                                <input type="radio" name="credit_type" value="developer" <?= ($project['credit_type'] ?? 'developer') === 'developer' ? 'checked' : '' ?> style="margin-right:8px;">
+                                <span style="color:#333;">Just Me</span>
+                            </label>
+                            <label style="display:block; margin-bottom:10px; cursor:pointer;">
+                                <input type="radio" name="credit_type" value="team" <?= ($project['credit_type'] ?? '') === 'team' ? 'checked' : '' ?> style="margin-right:8px;">
+                                <span style="color:#333;">Just the Team</span>
+                            </label>
+                            <label style="display:block; margin-bottom:10px; cursor:pointer;">
+                                <input type="radio" name="credit_type" value="both" <?= ($project['credit_type'] ?? '') === 'both' ? 'checked' : '' ?> style="margin-right:8px;">
+                                <span style="color:#333;">Both Me & Team</span>
+                            </label>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div style="margin-bottom:25px;">
                         <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
@@ -415,4 +475,17 @@ document.getElementById('screenshotInput').addEventListener('change', function()
         });
     }
 });
+
+function toggleCreditOptions() {
+    const teamSelect = document.getElementById('team_id');
+    const creditOptions = document.getElementById('creditTypeOptions');
+    
+    if (teamSelect && creditOptions) {
+        if (teamSelect.value) {
+            creditOptions.style.display = 'block';
+        } else {
+            creditOptions.style.display = 'none';
+        }
+    }
+}
 </script>

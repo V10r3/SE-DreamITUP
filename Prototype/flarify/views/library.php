@@ -27,13 +27,13 @@ if (!isset($_SESSION['user'])) {
 $user = $_SESSION['user'];
 
 // Fetch games based on user role
-if ($user['role'] === 'developer') {
+if ($user['userrole'] === 'developer') {
     // Developers see only their own games
     $stmt = $pdo->prepare("SELECT * FROM projects WHERE developer_id=? ORDER BY created_at DESC");
     $stmt->execute([$user['id']]);
 } else {
     // Other users see all available games
-    $stmt = $pdo->prepare("SELECT p.*, u.name AS dev_name FROM projects p JOIN users u ON p.developer_id = u.id ORDER BY p.created_at DESC");
+    $stmt = $pdo->prepare("SELECT p.*, u.username AS dev_name FROM projects p JOIN users u ON p.developer_id = u.id ORDER BY p.created_at DESC");
     $stmt->execute();
 }
 $games = $stmt->fetchAll();
@@ -47,7 +47,6 @@ $games = $stmt->fetchAll();
     <div class="dashboard-nav-links">
         <a href="index.php?page=dashboard">HOME</a>
         <a href="index.php?page=about">ABOUT US</a>
-        <a href="index.php?page=messages">INBOX</a>
         <a href="index.php?page=dashboard">GAMES</a>
         <a href="index.php?page=logout">LOG OUT</a>
     </div>
@@ -59,8 +58,8 @@ $games = $stmt->fetchAll();
         <?php include "partials/notifications.php"; ?>
         <a href="index.php?page=profile" style="text-decoration: none; color: inherit;">
             <div class="user-profile" style="cursor:pointer;">
-                <div class="user-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                <span><?= htmlspecialchars($user['name']) ?></span>
+                <div class="user-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
+                <span><?= htmlspecialchars($user['username']) ?></span>
             </div>
         </a>
     </div>
@@ -82,16 +81,22 @@ $games = $stmt->fetchAll();
             <i class="fas fa-play-circle"></i>
             <span>Collections</span>
         </a>
+        <?php if ($user['userrole'] === 'developer'): ?>
+        <a href="index.php?page=teams" class="sidebar-item">
+            <i class="fas fa-users"></i>
+            <span>Teams</span>
+        </a>
+        <?php endif; ?>
         <a href="index.php?page=messages" class="sidebar-item">
             <i class="fas fa-comments"></i>
             <span>Messages</span>
         </a>
-        <?php if ($user['role'] === 'developer'): ?>
+        <?php if ($user['userrole'] === 'developer'): ?>
         <a href="index.php?page=upload" class="sidebar-item">
             <i class="fas fa-folder-plus"></i>
             <span>Created Projects</span>
         </a>
-        <?php elseif ($user['role'] === 'tester'): ?>
+        <?php elseif ($user['userrole'] === 'tester'): ?>
         <a href="index.php?page=testing_queue" class="sidebar-item">
             <i class="fas fa-flask"></i>
             <span>Testing Queue</span>
@@ -109,15 +114,15 @@ $games = $stmt->fetchAll();
     <div class="dashboard-content">
         <div class="welcome-header">
             <h1><i class="fas fa-book"></i> My Library</h1>
-            <p><?php if ($user['role'] === 'developer'): ?>Your uploaded games<?php else: ?>Your game collection<?php endif; ?></p>
+            <p><?php if ($user['userrole'] === 'developer'): ?>Your uploaded games<?php else: ?>Your game collection<?php endif; ?></p>
         </div>
 
         <?php if (count($games) === 0): ?>
         <div style="text-align:center; padding:60px 20px; color:#999;">
             <i class="fas fa-folder-open" style="font-size:4rem; margin-bottom:20px; opacity:0.3;"></i>
             <h3>No games in your library yet</h3>
-            <p><?php if ($user['role'] === 'developer'): ?>Start by uploading your first game!<?php else: ?>Explore and download some games to get started.<?php endif; ?></p>
-            <?php if ($user['role'] === 'developer'): ?>
+            <p><?php if ($user['userrole'] === 'developer'): ?>Start by uploading your first game!<?php else: ?>Explore and download some games to get started.<?php endif; ?></p>
+            <?php if ($user['userrole'] === 'developer'): ?>
             <a href="index.php?page=upload" style="display:inline-block; margin-top:20px; padding:12px 30px; background:#9B59FF; color:white; text-decoration:none; border-radius:25px; font-weight:600;">
                 <i class="fas fa-upload"></i> Upload Game
             </a>
@@ -162,7 +167,7 @@ $games = $stmt->fetchAll();
                         <div style="font-size:0.75rem; color:#666; margin-top:5px;">
                             <i class="fas fa-download"></i> <?= number_format($game['downloads'] ?? 0) ?> downloads
                         </div>
-                        <p class="game-description"><?= htmlspecialchars(substr($game['description'], 0, 100)) ?><?= strlen($game['description']) > 100 ? '...' : '' ?></p>
+                        <p class="game-description"><?= htmlspecialchars(substr($game['projectdescription'], 0, 100)) ?><?= strlen($game['projectdescription']) > 100 ? '...' : '' ?></p>
                         <?php if ($user['role'] === 'developer'): ?>
                         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
                             <a href="index.php?page=edit&id=<?= $game['id'] ?>" onclick="event.stopPropagation();" style="color:#9B59FF; text-decoration:none; font-size:0.9rem; font-weight: 600;">

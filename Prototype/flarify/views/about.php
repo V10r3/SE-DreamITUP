@@ -1,5 +1,8 @@
 <?php
 // About Us page
+require "config.php";
+$isLoggedIn = isset($_SESSION['user']);
+$user = $_SESSION['user'] ?? null;
 ?>
 <link rel="stylesheet" href="assets/login-page-styles.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -9,10 +12,14 @@
     <div class="top-nav">
         <div class="brand-logo">Flarify</div>
         <div class="nav-menu">
-            <a href="index.php?page=login" class="nav-link">HOME</a>
+            <a href="index.php?page=<?= $isLoggedIn ? 'dashboard' : 'login' ?>" class="nav-link">HOME</a>
             <a href="index.php?page=about" class="nav-link active">ABOUT US</a>
             <a href="index.php?page=contact" class="nav-link">CONTACT</a>
-            <a href="index.php?page=login" class="nav-link">LOGIN</a>
+            <?php if ($isLoggedIn): ?>
+                <a href="index.php?page=profile" class="nav-link"><i class="fas fa-user"></i> PROFILE</a>
+            <?php else: ?>
+                <a href="index.php?page=login" class="nav-link">LOGIN</a>
+            <?php endif; ?>
         </div>
     </div>
 
